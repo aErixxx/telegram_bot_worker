@@ -7,6 +7,7 @@ from fastapi import FastAPI, HTTPException, Depends, Header
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from pydantic import BaseModel
 from playwright.async_api import async_playwright
+from contextlib import asynccontextmanager
 import logging
 import uvicorn
 import secrets
@@ -24,8 +25,16 @@ if not SECRET_KEY:
     SECRET_KEY = secrets.token_urlsafe(32)
     logger.warning("SECRET_KEY not found in environment. Generated temporary key.")
 
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # โค้ดตอน startup
+    print("Starting up")
+    yield
+    # โค้ดตอน shutdown
+    print("Shutting down")
+    
 # FastAPI app
-app = FastAPI(title="Playwright Worker API", version="1.0.0")
+app = FastAPI(title="Playwright Worker API", version="1.0.0", lifespan=lifespan)
 security = HTTPBearer()
 
 # Security functions
@@ -245,14 +254,6 @@ class PlaywrightWorker:
                 raise
 
 playwright_worker = PlaywrightWorker()
-
-@app.on_event("startup")
-async def startup_event():
-    await playwright_worker.initialize()
-
-@app.on_event("shutdown")
-async def shutdown_event():
-    await playwright_worker.close()
 
 @app.get("/")
 async def root():
