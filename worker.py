@@ -93,16 +93,16 @@ class ActionResponse(BaseModel):
     url: str
 
 class PlaywrightWorker:
-    def __init__(self):
+    def __init__(self, storage_path="playwright_storage.json"):
         self.playwright = None
         self.browser = None
         self.is_initialized = False
+        self.storage_path = storage_path
+        self.context = None  # browser context ที่จะเก็บ session
         
     async def initialize(self):
-        """Initialize Playwright browser"""
         if self.is_initialized:
             return
-            
         try:
             self.playwright = await async_playwright().start()
             self.browser = await self.playwright.chromium.launch(
@@ -111,25 +111,71 @@ class PlaywrightWorker:
                     '--no-sandbox',
                     '--disable-setuid-sandbox',
                     '--disable-dev-shm-usage',
+                    '--disable-gpu',   
+                    '--safebrowsing-disable-auto-update',
+                    '--disable-extensions',
+                    '--disable-sync',
                     '--disable-web-security',
                     '--disable-features=VizDisplayCompositor'
                 ]
             )
+            
+            # ถ้าไฟล์ session มีอยู่ ให้โหลด storageState มาใช้
+            if os.path.exists(self.storage_path):
+                self.context = await self.browser.new_context(storage_state=self.storage_path)
+                logger.info(f"Loaded session from {self.storage_path}")
+            else:
+                self.context = await self.browser.new_context()
+                logger.info("Created new browser context without session")
+            
             self.is_initialized = True
             logger.info("Playwright browser initialized successfully")
         except Exception as e:
             logger.error(f"Failed to initialize Playwright: {e}")
             raise
-    
+
+    async def save_storage(self):
+        """บันทึก storage state ลงไฟล์"""
+        if self.context:
+            await self.context.storage_state(path=self.storage_path)
+            logger.info(f"Storage state saved to {self.storage_path}")
+
     async def close(self):
-        """Close Playwright browser"""
+        if self.context:
+            await self.context.close()
         if self.browser:
             await self.browser.close()
         if self.playwright:
             await self.playwright.stop()
         self.is_initialized = False
         logger.info("Playwright browser closed")
-    
+
+    async def check_login(self, url, check_selector):
+        """
+        ตัวอย่างเช็ค login ด้วยการเปิดหน้าเว็บที่ต้องการ
+        แล้วเช็คว่ามี element บางตัว (เช่น logout button) หรือไม่
+        """
+        try:
+            page = await self.context.new_page()
+            await page.goto(url)
+            # รอโหลดหน้าเว็บ
+            await page.wait_for_load_state('networkidle')
+
+            # ตรวจสอบว่ามี element ที่บ่งชี้ login หรือไม่
+            element = await page.query_selector(check_selector)
+            is_logged_in = element is not None
+            
+            await page.close()
+            
+            # บันทึก session หลังตรวจสอบ (ถ้ามีการเปลี่ยนแปลง cookies)
+            await self.save_storage()
+
+            return is_logged_in
+        
+        except Exception as e:
+            logger.error(f"Error checking login: {e}")
+            return False
+            
     async def take_screenshot(self, url: str, full_page: bool = True, width: int = 1920, height: int = 1080, wait_for: str = "networkidle") -> bytes:
         """Take screenshot of a webpage"""
         try:
