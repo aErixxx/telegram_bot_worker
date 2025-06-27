@@ -1,12 +1,18 @@
 # Use official Python slim image as base
 FROM python:3.11-slim
 
-# ติดตั้ง dependencies ที่จำเป็น
+# Set working directory
+WORKDIR /app
+
+# Install system dependencies
 RUN apt-get update && apt-get install -y \
     curl \
     gnupg \
     ca-certificates \
     wget \
+    build-essential \
+    libffi-dev \
+    libssl-dev \
     libnss3 \
     libatk1.0-0 \
     libatk-bridge2.0-0 \
@@ -21,7 +27,7 @@ RUN apt-get update && apt-get install -y \
     libpango-1.0-0 \
     libxss1 \
     libxcb1 \
-    libxfixes0 \
+    libxfixes3 \
     libxshmfence1 \
     libdrm2 \
     fonts-liberation \
@@ -30,22 +36,26 @@ RUN apt-get update && apt-get install -y \
     --no-install-recommends && \
     rm -rf /var/lib/apt/lists/*
 
-# ติดตั้ง Rust toolchain (required สำหรับ build pydantic-core)
-RUN curl https://sh.rustup.rs -sSf | sh -s -- -y
+# Install Rust toolchain for pydantic-core
+RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
 ENV PATH="/root/.cargo/bin:${PATH}"
+# Set CARGO_HOME to a writable directory
+ENV CARGO_HOME=/tmp/cargo
+RUN mkdir -p /tmp/cargo
 
-# ติดตั้ง Playwright dependencies และติดตั้ง browser
-RUN pip install --upgrade pip setuptools wheel
+# Upgrade pip and install Python dependencies
+RUN pip install --no-cache-dir --upgrade pip setuptools wheel
 COPY requirements.txt /app/requirements.txt
-RUN pip install -r /app/requirements.txt
-RUN playwright install
+RUN pip install --no-cache-dir -r /app/requirements.txt
 
-# Copy source code
-WORKDIR /app
+# Install Playwright browsers with dependencies
+RUN playwright install --with-deps
+
+# Copy all files, including worker.py from project root
 COPY . /app
 
-# เปิดพอร์ตที่แอปใช้งาน
+# Expose port
 EXPOSE 8000
 
-# คำสั่งรันแอป (ปรับตามของคุณ)
+# Run the application
 CMD ["uvicorn", "worker:app", "--host", "0.0.0.0", "--port", "8000"]
