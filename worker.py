@@ -32,7 +32,8 @@ if not SECRET_KEY:
     # Generate a random secret key if not provided
     SECRET_KEY = secrets.token_urlsafe(32)
     logger.warning("SECRET_KEY not found in environment. Generated temporary key.")
-print(f"SECRET_KEY: {SECRET_KEY}")     
+    
+logger.info(f"SECRET_KEY: {SECRET_KEY}")    
 # FastAPI app
 app = FastAPI(title="Playwright Worker API", version="1.0.0", lifespan=lifespan)
 security = HTTPBearer()
@@ -46,7 +47,6 @@ async def verify_secret_key(credentials: HTTPAuthorizationCredentials = Depends(
     return credentials.credentials
 
 async def verify_api_key(x_api_key: str = Header(None)):
-    print(f"Received X-API-Key: {x_api_key}") 
     if not x_api_key:
         raise HTTPException(status_code=401, detail="X-API-Key header missing")
     if not secrets.compare_digest(x_api_key, SECRET_KEY):
@@ -266,14 +266,14 @@ async def root():
     }
 
 @app.get("/health")
-async def health_check(x_api_key: str = Depends(verify_api_key)):
-    print(f"Received X-API-Key in health_check : {x_api_key}") 
+async def health_check():
     return {
         "status": "healthy",
         "playwright_initialized": playwright_worker.is_initialized,
         "timestamp": datetime.now().isoformat(),
-        "authenticated": True
+        "authenticated": False
     }
+
 
 @app.post("/screenshot", response_model=ScreenshotResponse)
 async def take_screenshot(request: ScreenshotRequest, api_key: str = Depends(verify_api_key)):
