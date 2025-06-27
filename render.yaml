@@ -7,8 +7,3 @@ services:
     dockerfilePath: ./Dockerfile
     plan: free
     numInstances: 1
-    envVars:
-      - key: PYTHON_VERSION
-        value: "3.13"
-      - key: PORT
-        value: "8000"
