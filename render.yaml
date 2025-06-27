@@ -1,9 +1,17 @@
 services:
-  - type: web
-    name: telegram_bot_worker
-    runtime: docker
-    repo: https://github.com/aErixxx/telegram_bot_worker
-    branch: main
-    dockerfilePath: ./Dockerfile
-    plan: free
-    numInstances: 1
+- type: web
+  name: playwright-worker
+  runtime: python
+  repo: https://github.com/aErixxx/telegram_bot_worker
+  plan: free
+  envVars:
+  - key: SECRET_KEY
+    sync: false
+  - key: TELEGRAM_BOT_TOKEN
+    sync: false
+  region: singapore
+  buildCommand: pip install -r requirements.txt
+  startCommand: python worker.py
+  healthCheckPath: /health
+  autoDeployTrigger: commit
+version: "1"
