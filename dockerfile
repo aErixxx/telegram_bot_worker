@@ -44,8 +44,7 @@ WORKDIR /app
 RUN useradd --create-home --shell /bin/bash appuser
 
 # 2. Install only the RUNTIME dependencies for Playwright browsers
-# We copy the already installed system dependencies from the builder stage
-# which is more efficient than reinstalling them.
+# These are needed for the browser executables to run correctly.
 RUN apt-get update && apt-get install -y --no-install-recommends \
     ca-certificates fonts-liberation libnss3 libnspr4 libdbus-1-3 \
     libatk-bridge2.0-0 libatk1.0-0 libatspi2.0-0 libcups2 libdrm2 libgbm1 \
@@ -56,15 +55,19 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # 3. Copy installed Python packages from the builder stage
 COPY --from=builder /usr/local/lib/python3.13/site-packages /usr/local/lib/python3.13/site-packages
 
-# 4. Copy installed Playwright browser binaries from the builder stage
-COPY --from=builder /root/.cache/ms-playwright /home/appuser/.cache/ms-playwright
-ENV PLAYWRIGHT_BROWSERS_PATH=/home/appuser/.cache/ms-playwright
+# 4. **FIX:** Create the directory structure Render expects and copy Playwright browsers there.
+RUN mkdir -p /opt/render/.cache
+COPY --from=builder /root/.cache/ms-playwright /opt/render/.cache/ms-playwright
 
-# 5. Copy your application code
+# 5. **FIX:** Point the environment variable to the correct path used by Render.
+ENV PLAYWRIGHT_BROWSERS_PATH=/opt/render/.cache/ms-playwright
+
+# 6. Copy your application code
 COPY . .
 
-# Change ownership of the app directory to the non-root user
-RUN chown -R appuser:appuser /app /home/appuser/.cache
+# 7. **FIX:** Change ownership of all necessary directories to the non-root user.
+# This includes the app code and the new cache directory.
+RUN chown -R appuser:appuser /app /opt/render/.cache
 
 # Switch to the non-root user
 USER appuser
