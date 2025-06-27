@@ -3,7 +3,6 @@ import os
 import json
 import base64
 from datetime import datetime
-from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException, Depends, Header
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from pydantic import BaseModel
@@ -13,8 +12,6 @@ import uvicorn
 import secrets
 import hashlib
 
-# Load environment variables
-load_dotenv()
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
