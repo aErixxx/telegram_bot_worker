@@ -266,7 +266,7 @@ async def root():
     }
 
 @app.get("/health")
-async def health_check(api_key: str = Depends(verify_api_key)):
+async def health_check(x_api_key: str = Depends(verify_api_key)):
     print(f"Received X-API-Key in health_check : {x_api_key}") 
     return {
         "status": "healthy",
