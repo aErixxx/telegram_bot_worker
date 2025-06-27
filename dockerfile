@@ -1,5 +1,5 @@
 # Use official Python slim image as base
-FROM python:3.13-slim
+FROM python:3.11-slim
 
 # ติดตั้ง dependencies ที่จำเป็น
 RUN apt-get update && apt-get install -y \
