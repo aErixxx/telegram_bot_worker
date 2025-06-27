@@ -349,4 +349,4 @@ async def perform_actions(request: ActionRequest, api_key: str = Depends(verify_
 
 
 if __name__ == "__main__":
-    uvicorn.run("worker:app", host="0.0.0.0", port=8080, reload=False)
+    uvicorn.run("worker:app", host="0.0.0.0", port=8000, reload=False)
