@@ -1,5 +1,5 @@
 # Use official Python slim image as base
-FROM python:3.13-slim
+FROM python:3.13.3-slim
 
 # Set working directory
 WORKDIR /app
@@ -37,11 +37,14 @@ RUN apt-get update && apt-get install -y \
     rm -rf /var/lib/apt/lists/*
 
 # Install Rust toolchain for pydantic-core
-RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
-ENV PATH="/ roots/.cargo/bin:${PATH}"
+RUN apt-get update && apt-get install -y curl build-essential
+RUN curl https://sh.rustup.rs -sSf | sh -s -- -y
+ENV PATH="/root/.cargo/bin:${PATH}"
 # Set CARGO_HOME to a writable directory
 ENV CARGO_HOME=/tmp/cargo
 RUN mkdir -p /tmp/cargo
+
+
 
 # Upgrade pip and install Python dependencies
 RUN pip install --no-cache-dir --upgrade pip setuptools wheel
@@ -49,7 +52,7 @@ COPY requirements.txt /app/requirements.txt
 RUN pip install --no-cache-dir -r /app/requirements.txt
 
 # Install Playwright browsers with dependencies
-RUN pip install --no-cache-dir playwright==1.40.0 && \
+RUN pip install --no-cache-dir playwright==1.53.0 && \
     playwright install --with-deps
 
 # Copy all files, including worker.py
