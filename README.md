@@ -311,7 +311,7 @@ All endpoints return error details:
 
 ## 📞 Support
 
-- 🐛 Report issues: [GitHub Issues](https://github.com/yourusername/playwright-worker/issues)
+- 🐛 Report issues: [GitHub Issues](https://github.com/aErixxx/playwright-worker/issues)
 - 📖 Documentation: This README
 - 💬 Questions: Create a discussion
 
