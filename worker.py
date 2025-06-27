@@ -27,12 +27,12 @@ logger = logging.getLogger(__name__)
 
 # Security configuration
 SECRET_KEY = os.getenv('SECRET_KEY')
-print(f"SECRET_KEY: {SECRET_KEY}") 
+
 if not SECRET_KEY:
     # Generate a random secret key if not provided
     SECRET_KEY = secrets.token_urlsafe(32)
     logger.warning("SECRET_KEY not found in environment. Generated temporary key.")
-    
+print(f"SECRET_KEY: {SECRET_KEY}")     
 # FastAPI app
 app = FastAPI(title="Playwright Worker API", version="1.0.0", lifespan=lifespan)
 security = HTTPBearer()
