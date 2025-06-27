@@ -1,0 +1,7 @@
+services:
+  - type: web
+    name: playwright-worker
+    env: python
+    buildCommand: pip install -r requirements.txt && playwright install --with-deps chromium
+    startCommand: python your_main_file.py
+    plan: starter
